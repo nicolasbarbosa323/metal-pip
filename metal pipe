@@ -16,7 +16,7 @@ tool.Parent = game.Players.LocalPlayer.Backpack
 
 -- Adicionando o som ao item
 local sound = Instance.new("Sound")
-sound.SoundId = "rbxassetid://415700134"  -- ID do som
+sound.SoundId = "rbxassetid://6729922069"  -- ID do som
 sound.Parent = handle
 
 -- Função para tocar o som e animação com delay no som
