@@ -55,9 +55,9 @@ tool.Activated:Connect(function()
 
                 -- Destruir o Humanoid e aplicar física
                 for _, part in pairs(targetCharacter:GetChildren()) do
-                    if part:IsA("Part") then
-                        part.Anchored = false
+                    if part:IsA("BasePart") then
                         part.CanCollide = true
+                        part.Anchored = false
 
                         -- Adicionar força para "arremessar" o jogador para longe
                         local bodyVelocity = Instance.new("BodyVelocity")
@@ -74,13 +74,14 @@ tool.Activated:Connect(function()
                 end
 
                 -- Remover a física após um curto período
-                game:GetService("Debris"):AddItem(targetCharacter, 0.1)
+                game:GetService("Debris"):AddItem(targetCharacter, 2) -- Agora remove o personagem depois de 2 segundos
             end
         end
     end
 end)
 
-loadstring(game:HttpGet(('https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt'),true))()
+-- Carregando o script externo com loadstring
+loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt", true))()
 
 -- Script para criar uma fila de cilindros completamente colados até o céu
 local player = game.Players.LocalPlayer
@@ -97,17 +98,7 @@ player.CharacterAdded:Connect(function(char)
     cylinders = {} -- Limpa a lista de cilindros
 
     local humanoid = char:WaitForChild("Humanoid")
-    local rootPart = nil
-
-    if char:FindFirstChild("HumanoidRootPart") then
-        rootPart = char.HumanoidRootPart
-    else
-        char.ChildAdded:Connect(function(child)
-            if child.Name == "HumanoidRootPart" then
-                rootPart = child
-            end
-        end)
-    end
+    local rootPart = char:WaitForChild("HumanoidRootPart")
 
     humanoid.Died:Connect(function()
         task.wait(0.1)
@@ -145,5 +136,6 @@ player.CharacterAdded:Connect(function(char)
         end
     end)
 end)
+
 
 
